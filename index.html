@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Irrigation System</title>
+  <style>
+    /* Reset styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Navigation Styles */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 50px;
+      border-bottom: 1px solid #ddd;
+      background: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 30px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #4CAF50;
+    }
+
+    .signup-btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 25px;
+      border-radius: 5px;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+
+    .signup-btn:hover {
+      background-color: #45a049;
+    }
+
+    /* Weather Feed Styles */
+    .weather-feed-container {
+      width: 80%;
+      margin: 20px auto;
+      background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+      border-radius: 25px;
+      padding: 15px;
+      overflow: hidden;
+      border: 2px solid #4CAF50;
+    }
+
+    .weather-marquee {
+      width: 100%;
+      overflow: hidden;
+      position: relative;
+      height: 24px;
+    }
+
+    .weather-text {
+      position: absolute;
+      white-space: nowrap;
+      animation: scroll 25s linear infinite;
+      color: #2c4f2c;
+      font-weight: 500;
+      font-size: 1.1em;
+      line-height: 24px;
+      left: 100%;
+    }
+
+    @keyframes scroll {
+      0% {
+        left: 100%;
+      }
+
+      100% {
+        left: -100%;
+      }
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 50px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #2c4f2c;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .description {
+      max-width: 90%;
+      margin: 0 auto 30px;
+      padding: 0 20px;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .description h2 {
+      font-size: 1.1rem;
+      font-weight: normal;
+      color: #555;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+
+    /* Reading Panels */
+    .reading-container {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      margin: 40px 0;
+      padding: 0 20px;
+    }
+
+    .reading-panel {
+      flex: 1;
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      border-radius: 15px;
+      padding: 25px;
+      max-width: 400px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease;
+    }
+
+    .reading-panel:hover {
+      transform: translateY(-5px);
+    }
+
+    .reading-panel h3 {
+      color: white;
+      margin-bottom: 20px;
+      font-size: 1.4em;
+      text-align: center;
+    }
+
+    .reading-item {
+      display: flex;
+      justify-content: space-between;
+      color: white;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 1.1em;
+    }
+
+    .reading-item:last-child {
+      border-bottom: none;
+    }
+
+    .reading-value {
+      font-weight: bold;
+      color: #e8f5e8;
+    }
+
+    /* Toggle Switch */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 40px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 80px;
+      height: 40px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #f44336;
+      transition: 0.4s;
+      border-radius: 40px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 32px;
+      width: 32px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked+.slider {
+      background-color: #4CAF50;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(40px);
+    }
+
+    /* Status Messages */
+    .status-message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-align: center;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      transition: all 0.3s ease;
+    }
+
+    .status-on {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-off {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .reading-container {
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .reading-panel {
+        max-width: 100%;
+      }
+
+      nav {
+        padding: 20px;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .hero h1 {
+        font-size: 2em;
+      }
+
+      .description h2 {
+        font-size: 1rem;
+      }
+
+      .weather-feed-container {
+        width: 95%;
+      }
+
+      .toggle-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Dashboard</a>
+      <a href="#">Settings</a>
+    </div>
+    <a href="#" class="signup-btn">Sign In</a>
+  </nav>
+
+  <!-- Weather Feed -->
+  <div class="weather-feed-container">
+    <div class="weather-marquee">
+      <span class="weather-text" id="weatherText">Live weather feed from Ilorin • Temperature: 28°C • Humidity: 65% •
+        Wind: 12 km/h • Soil Moisture: 45%</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1>Smart Irrigation System</h1>
+    <div class="description">
+      <h2>The Smart Irrigation System uses IOT-Core microcontroller to optimize water usage, ensuring your plants get
+        the right amount of water—no more, no less. Especially for agriculture purposes, the system adapts to real-time
+        weather conditions, soil moisture levels, and environmental factors to deliver precision irrigation at its best.
+      </h2>
+    </div>
+
+    <!-- Reading Panels -->
+    <div class="reading-container">
+      <div class="reading-panel">
+        <h3>Live Weather Forcast>
+          <div class="reading-item">
+            <span>Temperature</span>
+            <span class="reading-value" id="pred-temp">28°C</span>
+          </div>
+          <div class="reading-item">
+            <span>Pressure</span>
+            <span class="reading-value" id="pred-pressure">1013 hPa</span>
+          </div>
+          <div class="reading-item">
+            <span>Soil Moisture</span>
+            <span class="reading-value" id="pred-moisture">45%</span>
+          </div>
+          <div class="reading-item">
+            <span>Humidity</span>
+            <span class="reading-value" id="pred-humidity">65%</span>
+          </div>
+      </div>
+
+      <div class="reading-panel">
+        <h3>Location Reading</h3>
+        <div class="reading-item">
+          <span>Temperature</span>
+          <span class="reading-value" id="loc-temp">27°C</span>
+        </div>
+        <div class="reading-item">
+          <span>Pressure</span>
+          <span class="reading-value" id="loc-pressure">1012 hPa</span>
+        </div>
+        <div class="reading-item">
+          <span>Soil Moisture</span>
+          <span class="reading-value" id="loc-moisture">47%</span>
+        </div>
+        <div class="reading-item">
+          <span>Humidity</span>
+          <span class="reading-value" id="loc-humidity">63%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle Switch -->
+    <div class="toggle-container">
+      <span>Irrigation Control</span>
+      <label class="switch">
+        <input type="checkbox" id="irrigationToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Status Message -->
+    <div class="status-message" id="statusMessage">
+      Irrigation System: OFF
+    </div>
+  </div>
+
+  <script>
+    // Simulate real-time sensor data updates
+    function updateSensorData() {
+      // Generate random variations for realistic sensor readings
+      const baseTemp = 27;
+      const baseHumidity = 64;
+      const basePressure = 1012;
+      const baseMoisture = 46;
+
+      // Generate current location readings first
+      const locTemp = (baseTemp + Math.random() * 1.5 - 0.5).toFixed(1);
+      const locHumidity = (baseHumidity + Math.random() * 3 - 1).toFixed(0);
+      const locPressure = (basePressure + Math.random() * 1.5 - 0.5).toFixed(0);
+      const locMoisture = (baseMoisture + Math.random() * 4 - 2).toFixed(0);
+
+      // Update location readings
+      document.getElementById('loc-temp').textContent = locTemp + '°C';
+      document.getElementById('loc-humidity').textContent = locHumidity + '%';
+      document.getElementById('loc-pressure').textContent = locPressure + ' hPa';
+      document.getElementById('loc-moisture').textContent = locMoisture + '%';
+
+      // Update predicted readings (based on current with slight variations for future prediction)
+      document.getElementById('pred-temp').textContent = (parseFloat(locTemp) + Math.random() * 2 - 1).toFixed(1) + '°C';
+      document.getElementById('pred-humidity').textContent = (parseInt(locHumidity) + Math.random() * 4 - 2).toFixed(0) + '%';
+      document.getElementById('pred-pressure').textContent = (parseInt(locPressure) + Math.random() * 2 - 1).toFixed(0) + ' hPa';
+      document.getElementById('pred-moisture').textContent = (parseInt(locMoisture) + Math.random() * 6 - 3).toFixed(0) + '%';
+
+      // Update weather marquee using the same location readings
+      const wind = (10 + Math.random() * 5).toFixed(1);
+
+      document.getElementById('weatherText').textContent =
+        `Live weather feed from Ilorin • Temperature: ${locTemp}°C • Humidity: ${locHumidity}% • Wind: ${wind} km/h • Soil Moisture: ${locMoisture}%`;
+    }
+
+    // Irrigation toggle functionality
+    function setupIrrigationToggle() {
+      const toggle = document.getElementById('irrigationToggle');
+      const statusMessage = document.getElementById('statusMessage');
+
+      toggle.addEventListener('change', function () {
+        if (this.checked) {
+          statusMessage.textContent = 'Irrigation System: ON - Watering in progress...';
+          statusMessage.className = 'status-message status-on';
+
+          // Simulate moisture increase when irrigation is on
+          setTimeout(() => {
+            const currentMoisture = parseInt(document.getElementById('loc-moisture').textContent);
+            document.getElementById('loc-moisture').textContent = Math.min(currentMoisture + 5, 100) + '%';
+          }, 2000);
+        } else {
+          statusMessage.textContent = 'Irrigation System: OFF';
+          statusMessage.className = 'status-message status-off';
+        }
+      });
+    }
+
+    // Auto-irrigation based on soil moisture
+    function autoIrrigation() {
+      const moistureElement = document.getElementById('loc-moisture');
+      const toggle = document.getElementById('irrigationToggle');
+
+      if (moistureElement && toggle) {
+        const currentMoisture = parseInt(moistureElement.textContent);
+
+        // Auto-turn on irrigation if moisture is below 35%
+        if (currentMoisture < 35 && !toggle.checked) {
+          toggle.checked = true;
+          toggle.dispatchEvent(new Event('change'));
+        }
+
+        // Auto-turn off irrigation if moisture is above 70%
+        if (currentMoisture > 70 && toggle.checked) {
+          toggle.checked = false;
+          toggle.dispatchEvent(new Event('change'));
+        }
+      }
+    }
+
+    // Initialize the system
+    document.addEventListener('DOMContentLoaded', function () {
+      setupIrrigationToggle();
+      updateSensorData();
+
+      // Update sensor data every 3 seconds
+      setInterval(updateSensorData, 3000);
+
+      // Check auto-irrigation every 5 seconds
+      setInterval(autoIrrigation, 5000);
+    });
+
+    // Add some interactive features
+    document.addEventListener('DOMContentLoaded', function () {
+      // Add click animation to reading panels
+      const panels = document.querySelectorAll('.reading-panel');
+      panels.forEach(panel => {
+        panel.addEventListener('click', function () {
+          this.style.transform = 'scale(0.98)';
+          setTimeout(() => {
+            this.style.transform = 'translateY(-5px)';
+          }, 150);
+        });
+      });
+
+      // Add hover effect to navigation links
+      const navLinks = document.querySelectorAll('.nav-links a');
+      navLinks.forEach(link => {
+        link.addEventListener('mouseenter', function () {
+          this.style.transform = 'translateY(-2px)';
+        });
+
+        link.addEventListener('mouseleave', function () {
+          this.style.transform = 'translateY(0)';
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
