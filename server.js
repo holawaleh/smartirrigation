@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// In-memory storage for sensor data and pump status
+// In-memory storage
 let sensorData = {
   temperature: 27.0,
   humidity: 64,
@@ -22,117 +22,96 @@ let pumpStatus = {
   autoMode: true
 };
 
-// Store recent sensor readings for trend analysis
 let sensorHistory = [];
 
-// ENDPOINT 1: Switch pump control
+// --- FRONTEND-COMPATIBLE ENDPOINTS ---
+
+// 🔌 Toggle Pump (Manual Control)
 app.post('/api/pump/toggle', (req, res) => {
-  try {
-    const { action, mode } = req.body;
-    
-    let newStatus;
-    
-    if (action === 'toggle') {
-      newStatus = !pumpStatus.isOn;
-    } else if (action === 'on') {
-      newStatus = true;
-    } else if (action === 'off') {
-      newStatus = false;
-    } else {
-      return res.status(400).json({ 
-        error: 'Invalid action. Use "on", "off", or "toggle"' 
-      });
-    }
-    
-    pumpStatus.isOn = newStatus;
-    pumpStatus.lastToggled = new Date().toISOString();
-    
-    if (mode) {
-      pumpStatus.autoMode = mode === 'auto';
-    }
-    
-    console.log(`Pump ${newStatus ? 'ON' : 'OFF'} - Mode: ${pumpStatus.autoMode ? 'Auto' : 'Manual'}`);
-    
-    res.json({
-      success: true,
-      pumpStatus: pumpStatus,
-      message: `Pump turned ${newStatus ? 'ON' : 'OFF'}`
-    });
-    
-  } catch (error) {
-    console.error('Error toggling pump:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
-  }
-});
+  const { action, mode } = req.body;
 
-// ENDPOINT 2: Receive sensor data from MCU
-app.post('/api/sensors/data', (req, res) => {
-  try {
-    const { temperature, humidity, pressure, soilMoisture } = req.body;
-    
-    if (temperature === undefined || humidity === undefined || soilMoisture === undefined) {
-      return res.status(400).json({ 
-        error: 'Missing required sensor data' 
-      });
-    }
-    
-    // Update sensor data
-    sensorData = {
-      temperature: parseFloat(temperature),
-      humidity: parseInt(humidity),
-      pressure: pressure ? parseInt(pressure) : sensorData.pressure,
-      soilMoisture: parseInt(soilMoisture),
-      timestamp: new Date().toISOString()
-    };
-    
-    // Add to history
-    sensorHistory.push({ ...sensorData });
-    if (sensorHistory.length > 100) {
-      sensorHistory.shift();
-    }
-    
-    // Auto-irrigation logic
-    if (pumpStatus.autoMode) {
-      if (sensorData.soilMoisture < 35 && !pumpStatus.isOn) {
-        pumpStatus.isOn = true;
-        pumpStatus.lastToggled = new Date().toISOString();
-        console.log('Auto-irrigation: Pump turned ON');
-      } else if (sensorData.soilMoisture > 70 && pumpStatus.isOn) {
-        pumpStatus.isOn = false;
-        pumpStatus.lastToggled = new Date().toISOString();
-        console.log('Auto-irrigation: Pump turned OFF');
-      }
-    }
-    
-    res.json({
-      success: true,
-      message: 'Sensor data received',
-      pumpCommand: pumpStatus.isOn ? 'ON' : 'OFF',
-      autoMode: pumpStatus.autoMode
-    });
-    
-  } catch (error) {
-    console.error('Error processing sensor data:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
+  if (!['toggle', 'on', 'off'].includes(action)) {
+    return res.status(400).json({ success: false, error: 'Invalid action' });
   }
-});
 
-// Get current sensor data
-app.get('/api/sensors/data', (req, res) => {
+  let newStatus;
+  if (action === 'toggle') {
+    newStatus = !pumpStatus.isOn;
+  } else {
+    newStatus = action === 'on';
+  }
+
+  pumpStatus.isOn = newStatus;
+  pumpStatus.lastToggled = new Date().toISOString();
+  pumpStatus.autoMode = mode === 'auto';
+
   res.json({
     success: true,
-    sensorData: sensorData,
-    pumpStatus: pumpStatus
+    pumpStatus: {
+      isOn: pumpStatus.isOn,
+      autoMode: pumpStatus.autoMode
+    }
   });
 });
 
-// MCU endpoint to get pump commands
+// 📊 Get Sensor Data + Pump Status
+app.get('/api/sensors/data', (req, res) => {
+  res.json({
+    success: true,
+    sensorData: {
+      temperature: sensorData.temperature,
+      humidity: sensorData.humidity,
+      pressure: sensorData.pressure,
+      soilMoisture: sensorData.soilMoisture
+    },
+    pumpStatus: {
+      isOn: pumpStatus.isOn,
+      autoMode: pumpStatus.autoMode
+    }
+  });
+});
+
+// 📤 Receive Sensor Data from MCU (ESP8266 / Arduino)
+app.post('/api/sensors/data', (req, res) => {
+  const { temperature, humidity, pressure, soilMoisture } = req.body;
+
+  if (temperature === undefined || humidity === undefined || soilMoisture === undefined) {
+    return res.status(400).json({ success: false, error: 'Missing required data' });
+  }
+
+  // Update latest sensor data
+  sensorData = {
+    temperature: parseFloat(temperature),
+    humidity: parseInt(humidity),
+    pressure: pressure ? parseInt(pressure) : sensorData.pressure,
+    soilMoisture: parseInt(soilMoisture),
+    timestamp: new Date().toISOString()
+  };
+
+  // Store history (for trends)
+  sensorHistory.push({ ...sensorData });
+  if (sensorHistory.length > 100) sensorHistory.shift();
+
+  // Auto-irrigation logic
+  if (pumpStatus.autoMode) {
+    if (sensorData.soilMoisture < 35 && !pumpStatus.isOn) {
+      pumpStatus.isOn = true;
+      pumpStatus.lastToggled = new Date().toISOString();
+    } else if (sensorData.soilMoisture > 70 && pumpStatus.isOn) {
+      pumpStatus.isOn = false;
+      pumpStatus.lastToggled = new Date().toISOString();
+    }
+  }
+
+  res.json({
+    success: true,
+    message: 'Sensor data received',
+    pumpCommand: pumpStatus.isOn ? 'ON' : 'OFF',
+    autoMode: pumpStatus.autoMode
+  });
+});
+
+// ⚙️ Get Current Pump Command for MCU
 app.get('/api/mcu/pump-command', (req, res) => {
   res.json({
     success: true,
@@ -142,16 +121,16 @@ app.get('/api/mcu/pump-command', (req, res) => {
   });
 });
 
-// Health check endpoint
+// 🧪 Health Check
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Smart Irrigation API is running',
+    status: 'running',
     timestamp: new Date().toISOString()
   });
 });
 
-// Start server
+// Start Server
 app.listen(port, () => {
-  console.log(`Smart Irrigation API Server running on port ${port}`);
+  console.log(`✅ Smart Irrigation API running on http://localhost:${port}`);
 });
