@@ -175,15 +175,50 @@
     }
 
     /* Toggle Switch */
+    .control-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      margin-top: 40px;
+    }
+
     .toggle-container {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 15px;
-      margin-top: 40px;
       font-size: 1.2em;
       font-weight: bold;
       color: #333;
+    }
+
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .mode-btn {
+      padding: 8px 15px;
+      border: 2px solid #4CAF50;
+      background: white;
+      color: #4CAF50;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+
+    .mode-btn.active {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .mode-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
     .switch {
@@ -258,6 +293,35 @@
       border: 1px solid #f5c6cb;
     }
 
+    .status-auto {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .connection-status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: bold;
+      z-index: 1000;
+    }
+
+    .connected {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .disconnected {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .reading-container {
@@ -296,11 +360,20 @@
         flex-direction: column;
         gap: 10px;
       }
+
+      .mode-toggle {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 
 <body>
+  <!-- Connection Status -->
+  <div class="connection-status" id="connectionStatus">
+    🔴 Disconnected
+  </div>
+
   <!-- Navigation -->
   <nav>
     <div class="nav-links">
@@ -331,53 +404,63 @@
     <!-- Reading Panels -->
     <div class="reading-container">
       <div class="reading-panel">
-        <h3>Live Weather Forcast>
-          <div class="reading-item">
-            <span>Temperature</span>
-            <span class="reading-value" id="pred-temp">28°C</span>
-          </div>
-          <div class="reading-item">
-            <span>Pressure</span>
-            <span class="reading-value" id="pred-pressure">1013 hPa</span>
-          </div>
-          <div class="reading-item">
-            <span>Soil Moisture</span>
-            <span class="reading-value" id="pred-moisture">45%</span>
-          </div>
-          <div class="reading-item">
-            <span>Humidity</span>
-            <span class="reading-value" id="pred-humidity">65%</span>
-          </div>
-      </div>
-
-      <div class="reading-panel">
-        <h3>Location Reading</h3>
+        <h3>Live Weather Forecast</h3>
         <div class="reading-item">
           <span>Temperature</span>
-          <span class="reading-value" id="loc-temp">27°C</span>
+          <span class="reading-value" id="pred-temp">28°C</span>
         </div>
         <div class="reading-item">
           <span>Pressure</span>
-          <span class="reading-value" id="loc-pressure">1012 hPa</span>
+          <span class="reading-value" id="pred-pressure">1013 hPa</span>
         </div>
         <div class="reading-item">
           <span>Soil Moisture</span>
-          <span class="reading-value" id="loc-moisture">47%</span>
+          <span class="reading-value" id="pred-moisture">45%</span>
         </div>
         <div class="reading-item">
           <span>Humidity</span>
-          <span class="reading-value" id="loc-humidity">63%</span>
+          <span class="reading-value" id="pred-humidity">65%</span>
+        </div>
+      </div>
+
+      <div class="reading-panel">
+        <h3>Sensor Readings</h3>
+        <div class="reading-item">
+          <span>Temperature</span>
+          <span class="reading-value" id="sensor-temp">27°C</span>
+        </div>
+        <div class="reading-item">
+          <span>Pressure</span>
+          <span class="reading-value" id="sensor-pressure">1012 hPa</span>
+        </div>
+        <div class="reading-item">
+          <span>Soil Moisture</span>
+          <span class="reading-value" id="sensor-moisture">47%</span>
+        </div>
+        <div class="reading-item">
+          <span>Humidity</span>
+          <span class="reading-value" id="sensor-humidity">63%</span>
         </div>
       </div>
     </div>
 
-    <!-- Toggle Switch -->
-    <div class="toggle-container">
-      <span>Irrigation Control</span>
-      <label class="switch">
-        <input type="checkbox" id="irrigationToggle">
-        <span class="slider"></span>
-      </label>
+    <!-- Control Container -->
+    <div class="control-container">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle">
+        <span>Control Mode:</span>
+        <button class="mode-btn active" id="autoModeBtn" onclick="setMode('auto')">Auto</button>
+        <button class="mode-btn" id="manualModeBtn" onclick="setMode('manual')">Manual</button>
+      </div>
+
+      <!-- Irrigation Toggle -->
+      <div class="toggle-container">
+        <span>Irrigation Control</span>
+        <label class="switch">
+          <input type="checkbox" id="irrigationToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
 
     <!-- Status Message -->
@@ -387,98 +470,149 @@
   </div>
 
   <script>
-    // Simulate real-time sensor data updates
-    function updateSensorData() {
-      // Generate random variations for realistic sensor readings
-      const baseTemp = 27;
-      const baseHumidity = 64;
-      const basePressure = 1012;
-      const baseMoisture = 46;
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:3000/api'; // Change this to your server URL
 
-      // Generate current location readings first
-      const locTemp = (baseTemp + Math.random() * 1.5 - 0.5).toFixed(1);
-      const locHumidity = (baseHumidity + Math.random() * 3 - 1).toFixed(0);
-      const locPressure = (basePressure + Math.random() * 1.5 - 0.5).toFixed(0);
-      const locMoisture = (baseMoisture + Math.random() * 4 - 2).toFixed(0);
+    let isConnected = false;
+    let currentMode = 'auto';
 
-      // Update location readings
-      document.getElementById('loc-temp').textContent = locTemp + '°C';
-      document.getElementById('loc-humidity').textContent = locHumidity + '%';
-      document.getElementById('loc-pressure').textContent = locPressure + ' hPa';
-      document.getElementById('loc-moisture').textContent = locMoisture + '%';
+    // API Functions
+    async function fetchSensorData() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/sensors/data`);
+        const data = await response.json();
 
-      // Update predicted readings (based on current with slight variations for future prediction)
-      document.getElementById('pred-temp').textContent = (parseFloat(locTemp) + Math.random() * 2 - 1).toFixed(1) + '°C';
-      document.getElementById('pred-humidity').textContent = (parseInt(locHumidity) + Math.random() * 4 - 2).toFixed(0) + '%';
-      document.getElementById('pred-pressure').textContent = (parseInt(locPressure) + Math.random() * 2 - 1).toFixed(0) + ' hPa';
-      document.getElementById('pred-moisture').textContent = (parseInt(locMoisture) + Math.random() * 6 - 3).toFixed(0) + '%';
-
-      // Update weather marquee using the same location readings
-      const wind = (10 + Math.random() * 5).toFixed(1);
-
-      document.getElementById('weatherText').textContent =
-        `Live weather feed from Ilorin • Temperature: ${locTemp}°C • Humidity: ${locHumidity}% • Wind: ${wind} km/h • Soil Moisture: ${locMoisture}%`;
+        if (data.success) {
+          updateSensorDisplay(data.sensorData);
+          updatePumpStatus(data.pumpStatus);
+          updateConnectionStatus(true);
+        }
+      } catch (error) {
+        console.error('Error fetching sensor data:', error);
+        updateConnectionStatus(false);
+      }
     }
 
-    // Irrigation toggle functionality
-    function setupIrrigationToggle() {
+    async function togglePump(action = 'toggle') {
+      try {
+        const response = await fetch(`${API_BASE_URL}/pump/toggle`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: action,
+            mode: currentMode
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          updatePumpStatus(data.pumpStatus);
+          updateConnectionStatus(true);
+        }
+      } catch (error) {
+        console.error('Error toggling pump:', error);
+        updateConnectionStatus(false);
+      }
+    }
+
+    // Update Display Functions
+    function updateSensorDisplay(sensorData) {
+      document.getElementById('sensor-temp').textContent = sensorData.temperature + '°C';
+      document.getElementById('sensor-humidity').textContent = sensorData.humidity + '%';
+      document.getElementById('sensor-pressure').textContent = sensorData.pressure + ' hPa';
+      document.getElementById('sensor-moisture').textContent = sensorData.soilMoisture + '%';
+
+      // Update weather feed
+      const wind = (10 + Math.random() * 5).toFixed(1);
+      document.getElementById('weatherText').textContent =
+        `Live weather feed from Ilorin • Temperature: ${sensorData.temperature}°C • Humidity: ${sensorData.humidity}% • Wind: ${wind} km/h • Soil Moisture: ${sensorData.soilMoisture}%`;
+
+      // Update predictions (simulate slight variations)
+      document.getElementById('pred-temp').textContent = (sensorData.temperature + Math.random() * 2 - 1).toFixed(1) + '°C';
+      document.getElementById('pred-humidity').textContent = (sensorData.humidity + Math.random() * 4 - 2).toFixed(0) + '%';
+      document.getElementById('pred-pressure').textContent = (sensorData.pressure + Math.random() * 2 - 1).toFixed(0) + ' hPa';
+      document.getElementById('pred-moisture').textContent = (sensorData.soilMoisture + Math.random() * 6 - 3).toFixed(0) + '%';
+    }
+
+    function updatePumpStatus(pumpStatus) {
       const toggle = document.getElementById('irrigationToggle');
       const statusMessage = document.getElementById('statusMessage');
 
-      toggle.addEventListener('change', function () {
-        if (this.checked) {
-          statusMessage.textContent = 'Irrigation System: ON - Watering in progress...';
-          statusMessage.className = 'status-message status-on';
+      toggle.checked = pumpStatus.isOn;
+      currentMode = pumpStatus.autoMode ? 'auto' : 'manual';
 
-          // Simulate moisture increase when irrigation is on
-          setTimeout(() => {
-            const currentMoisture = parseInt(document.getElementById('loc-moisture').textContent);
-            document.getElementById('loc-moisture').textContent = Math.min(currentMoisture + 5, 100) + '%';
-          }, 2000);
-        } else {
-          statusMessage.textContent = 'Irrigation System: OFF';
-          statusMessage.className = 'status-message status-off';
-        }
-      });
+      updateModeButtons();
+
+      if (pumpStatus.isOn) {
+        statusMessage.textContent = `Irrigation System: ON (${currentMode.toUpperCase()} mode)`;
+        statusMessage.className = 'status-message status-on';
+      } else {
+        statusMessage.textContent = `Irrigation System: OFF (${currentMode.toUpperCase()} mode)`;
+        statusMessage.className = 'status-message status-off';
+      }
     }
 
-    // Auto-irrigation based on soil moisture
-    function autoIrrigation() {
-      const moistureElement = document.getElementById('loc-moisture');
-      const toggle = document.getElementById('irrigationToggle');
+    function updateConnectionStatus(connected) {
+      const statusElement = document.getElementById('connectionStatus');
+      isConnected = connected;
 
-      if (moistureElement && toggle) {
-        const currentMoisture = parseInt(moistureElement.textContent);
-
-        // Auto-turn on irrigation if moisture is below 35%
-        if (currentMoisture < 35 && !toggle.checked) {
-          toggle.checked = true;
-          toggle.dispatchEvent(new Event('change'));
-        }
-
-        // Auto-turn off irrigation if moisture is above 70%
-        if (currentMoisture > 70 && toggle.checked) {
-          toggle.checked = false;
-          toggle.dispatchEvent(new Event('change'));
-        }
+      if (connected) {
+        statusElement.textContent = '🟢 Connected';
+        statusElement.className = 'connection-status connected';
+      } else {
+        statusElement.textContent = '🔴 Disconnected';
+        statusElement.className = 'connection-status disconnected';
       }
+    }
+
+    function updateModeButtons() {
+      const autoBtn = document.getElementById('autoModeBtn');
+      const manualBtn = document.getElementById('manualModeBtn');
+
+      if (currentMode === 'auto') {
+        autoBtn.classList.add('active');
+        manualBtn.classList.remove('active');
+      } else {
+        manualBtn.classList.add('active');
+        autoBtn.classList.remove('active');
+      }
+    }
+
+    // Mode Control
+    function setMode(mode) {
+      currentMode = mode;
+      updateModeButtons();
+
+      // Update mode on server
+      togglePump(document.getElementById('irrigationToggle').checked ? 'on' : 'off');
     }
 
     // Initialize the system
     document.addEventListener('DOMContentLoaded', function () {
-      setupIrrigationToggle();
-      updateSensorData();
+      const toggle = document.getElementById('irrigationToggle');
 
-      // Update sensor data every 3 seconds
-      setInterval(updateSensorData, 3000);
+      // Setup irrigation toggle
+      toggle.addEventListener('change', function () {
+        const action = this.checked ? 'on' : 'off';
+        togglePump(action);
+      });
 
-      // Check auto-irrigation every 5 seconds
-      setInterval(autoIrrigation, 5000);
+      // Initial data fetch
+      fetchSensorData();
+
+      // Fetch data every 5 seconds
+      setInterval(fetchSensorData, 5000);
+
+      // Add interactive features
+      setupInteractiveFeatures();
     });
 
-    // Add some interactive features
-    document.addEventListener('DOMContentLoaded', function () {
-      // Add click animation to reading panels
+    // Interactive Features
+    function setupInteractiveFeatures() {
+      // Panel click animations
       const panels = document.querySelectorAll('.reading-panel');
       panels.forEach(panel => {
         panel.addEventListener('click', function () {
@@ -489,7 +623,7 @@
         });
       });
 
-      // Add hover effect to navigation links
+      // Navigation link hover effects
       const navLinks = document.querySelectorAll('.nav-links a');
       navLinks.forEach(link => {
         link.addEventListener('mouseenter', function () {
@@ -500,7 +634,7 @@
           this.style.transform = 'translateY(0)';
         });
       });
-    });
+    }
   </script>
 </body>
 
