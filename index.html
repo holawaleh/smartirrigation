@@ -387,29 +387,6 @@
       border: 1px solid #f5c6cb;
     }
 
-    /* API Info Panel */
-    .api-info {
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 10px;
-      padding: 20px;
-      margin: 20px auto;
-      max-width: 600px;
-      font-size: 0.9em;
-    }
-
-    .api-info h3 {
-      color: #495057;
-      margin-bottom: 15px;
-    }
-
-    .api-info code {
-      background: #e9ecef;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-    }
-
     /* Responsive Design */
     @media (max-width: 768px) {
       .reading-container {
@@ -453,11 +430,6 @@
         flex-direction: column;
       }
 
-      .api-info {
-        margin: 20px 10px;
-        padding: 15px;
-      }
-
       .connection-input {
         flex-direction: column;
       }
@@ -473,7 +445,7 @@
 <body>
   <!-- Connection Status -->
   <div class="connection-status" id="connectionStatus">
-    🔴 Disconnected
+    🔴 Demo Mode
   </div>
 
   <!-- Navigation -->
@@ -497,13 +469,23 @@
   <div class="hero">
     <h1>Smart Irrigation System</h1>
     <div class="description">
-      <h2>The Smart Irrigation System uses ESP8266 microcontroller to optimize water usage, ensuring your plants get
-        the right amount of water—no more, no less. Especially for agriculture purposes, the system adapts to real-time
+      <h2>The Smart Irrigation System uses ESP8266 microcontroller to optimize water usage, ensuring your plants get the
+        right amount of water—no more, no less. Especially for agriculture purposes, the system adapts to real-time
         weather conditions, soil moisture levels, and environmental factors to deliver precision irrigation at its best.
       </h2>
     </div>
+  </div>
 
-
+  <!-- Arduino Connection Panel -->
+  <div class="arduino-connection">
+    <h3>Arduino Connection</h3>
+    <div class="connection-input">
+      <input type="text" id="arduinoIP" placeholder="Enter Arduino IP (e.g., 192.168.1.100)" value="192.168.1.100">
+      <button onclick="connectToArduino()">Connect</button>
+    </div>
+    <div class="arduino-status arduino-disconnected" id="arduinoStatus">
+      🔴 Not connected to Arduino
+    </div>
   </div>
 
   <!-- Reading Panels -->
@@ -570,72 +552,78 @@
 
   <!-- Status Message -->
   <div class="status-message" id="statusMessage">
-    Connect to Arduino to see pump status
-  </div>
-
-
+    System running in demo mode
   </div>
 
   <script>
-    // API Configuration - Updated to use deployed server
-    const API_BASE_URL = 'https://smartirrigation-edx5.onrender.com/api';
+    // In-memory storage instead of localStorage
+    let appState = {
+      isConnected: false,
+      currentMode: 'auto',
+      arduinoIP: '192.168.1.100',
+      arduinoConnected: false,
+      pumpStatus: { isOn: false, autoMode: true },
+      sensorData: {
+        temperature: 28,
+        humidity: 65,
+        soilMoisture: 45,
+        pressure: 1013
+      }
+    };
 
-    let isConnected = false;
-    let currentMode = 'auto';
-    let arduinoIP = '';
-    let arduinoConnected = false;
-
-    // API Functions
+    // Simulate API Functions (since real API calls won't work in demo)
     async function fetchSensorData() {
       try {
-        const response = await fetch(`${API_BASE_URL}/sensors/data`);
-        const data = await response.json();
+        // Simulate realistic sensor data variations
+        appState.sensorData.temperature = 26 + Math.random() * 6;
+        appState.sensorData.humidity = 60 + Math.random() * 20;
+        appState.sensorData.soilMoisture = 40 + Math.random() * 20;
+        appState.sensorData.pressure = 1010 + Math.random() * 6;
 
-        if (data.success) {
-          updateSensorDisplay(data.sensorData);
-          updatePumpStatus(data.pumpStatus);
-          updateConnectionStatus(true);
-        }
+        updateSensorDisplay(appState.sensorData);
+        updatePumpStatus(appState.pumpStatus);
+        updateConnectionStatus(true);
       } catch (error) {
-        console.error('Error fetching sensor data:', error);
+        console.error('Error in demo mode:', error);
         updateConnectionStatus(false);
       }
     }
 
     async function fetchArduinoData() {
-      if (!arduinoIP) return;
+      if (!appState.arduinoIP) return;
 
       try {
-        const response = await fetch(`http://${arduinoIP}/api/data`);
-        const data = await response.json();
+        // Simulate Arduino data
+        const arduinoData = {
+          temperature: 27 + Math.random() * 4,
+          humidity: 62 + Math.random() * 16,
+          moisture: Math.floor(300 + Math.random() * 400),
+          threshold: 500,
+          pumpActive: appState.pumpStatus.isOn
+        };
 
-        updateArduinoDisplay(data);
-        updateArduinoStatus(true, 'Connected to Arduino');
+        updateArduinoDisplay(arduinoData);
+        updateArduinoStatus(true, 'Connected to Arduino (Demo)');
       } catch (error) {
-        console.error('Error fetching Arduino data:', error);
+        console.error('Arduino demo error:', error);
         updateArduinoStatus(false, 'Failed to connect to Arduino');
       }
     }
 
     async function togglePump(action = 'toggle') {
       try {
-        const response = await fetch(`${API_BASE_URL}/pump/toggle`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: action,
-            mode: currentMode
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          updatePumpStatus(data.pumpStatus);
-          updateConnectionStatus(true);
+        if (action === 'toggle') {
+          appState.pumpStatus.isOn = !appState.pumpStatus.isOn;
+        } else if (action === 'on') {
+          appState.pumpStatus.isOn = true;
+        } else if (action === 'off') {
+          appState.pumpStatus.isOn = false;
         }
+
+        appState.pumpStatus.autoMode = appState.currentMode === 'auto';
+
+        updatePumpStatus(appState.pumpStatus);
+        updateConnectionStatus(true);
       } catch (error) {
         console.error('Error toggling pump:', error);
         updateConnectionStatus(false);
@@ -643,12 +631,12 @@
     }
 
     async function activateArduinoPump() {
-      if (!arduinoIP) return;
+      if (!appState.arduinoIP) return;
 
       try {
-        const response = await fetch(`http://${arduinoIP}/pump`);
-        const result = await response.text();
-        console.log('Arduino pump response:', result);
+        console.log('Arduino pump activated (Demo mode)');
+        appState.pumpStatus.isOn = true;
+        updatePumpStatus(appState.pumpStatus);
       } catch (error) {
         console.error('Error activating Arduino pump:', error);
       }
@@ -659,7 +647,7 @@
       // Update weather feed
       const wind = (10 + Math.random() * 5).toFixed(1);
       document.getElementById('weatherText').textContent =
-        `Live weather feed from Ilorin • Temperature: ${sensorData.temperature}°C • Humidity: ${sensorData.humidity}% • Wind: ${wind} km/h • Soil Moisture: ${sensorData.soilMoisture}%`;
+        `Live weather feed from Ilorin • Temperature: ${sensorData.temperature.toFixed(1)}°C • Humidity: ${sensorData.humidity.toFixed(0)}% • Wind: ${wind} km/h • Soil Moisture: ${sensorData.soilMoisture.toFixed(0)}%`;
 
       // Update predictions (simulate slight variations)
       document.getElementById('pred-temp').textContent = (sensorData.temperature + Math.random() * 2 - 1).toFixed(1) + '°C';
@@ -669,8 +657,8 @@
     }
 
     function updateArduinoDisplay(arduinoData) {
-      document.getElementById('sensor-temp').textContent = arduinoData.temperature + '°C';
-      document.getElementById('sensor-humidity').textContent = arduinoData.humidity + '%';
+      document.getElementById('sensor-temp').textContent = arduinoData.temperature.toFixed(1) + '°C';
+      document.getElementById('sensor-humidity').textContent = arduinoData.humidity.toFixed(0) + '%';
       document.getElementById('sensor-moisture').textContent = arduinoData.moisture;
       document.getElementById('sensor-threshold').textContent = arduinoData.threshold;
 
@@ -691,16 +679,16 @@
       const statusMessage = document.getElementById('statusMessage');
 
       toggle.checked = pumpStatus.isOn;
-      currentMode = pumpStatus.autoMode ? 'auto' : 'manual';
+      appState.currentMode = pumpStatus.autoMode ? 'auto' : 'manual';
 
       updateModeButtons();
 
-      if (!arduinoConnected) {
+      if (!appState.arduinoConnected) {
         if (pumpStatus.isOn) {
-          statusMessage.textContent = `Server Pump: ON (${currentMode.toUpperCase()} mode)`;
+          statusMessage.textContent = `Demo Pump: ON (${appState.currentMode.toUpperCase()} mode)`;
           statusMessage.className = 'status-message status-on';
         } else {
-          statusMessage.textContent = `Server Pump: OFF (${currentMode.toUpperCase()} mode)`;
+          statusMessage.textContent = `Demo Pump: OFF (${appState.currentMode.toUpperCase()} mode)`;
           statusMessage.className = 'status-message status-off';
         }
       }
@@ -708,20 +696,20 @@
 
     function updateConnectionStatus(connected) {
       const statusElement = document.getElementById('connectionStatus');
-      isConnected = connected;
+      appState.isConnected = connected;
 
       if (connected) {
-        statusElement.textContent = '🟢 Server Connected';
+        statusElement.textContent = '🟢 Demo Mode Active';
         statusElement.className = 'connection-status connected';
       } else {
-        statusElement.textContent = '🔴 Server Disconnected';
+        statusElement.textContent = '🔴 Demo Mode Error';
         statusElement.className = 'connection-status disconnected';
       }
     }
 
     function updateArduinoStatus(connected, message) {
       const statusElement = document.getElementById('arduinoStatus');
-      arduinoConnected = connected;
+      appState.arduinoConnected = connected;
 
       if (connected) {
         statusElement.textContent = '🟢 ' + message;
@@ -736,7 +724,7 @@
       const autoBtn = document.getElementById('autoModeBtn');
       const manualBtn = document.getElementById('manualModeBtn');
 
-      if (currentMode === 'auto') {
+      if (appState.currentMode === 'auto') {
         autoBtn.classList.add('active');
         manualBtn.classList.remove('active');
       } else {
@@ -748,28 +736,27 @@
     // Arduino Connection
     function connectToArduino() {
       const ipInput = document.getElementById('arduinoIP');
-      arduinoIP = ipInput.value.trim();
+      appState.arduinoIP = ipInput.value.trim();
 
-      if (!arduinoIP) {
+      if (!appState.arduinoIP) {
         updateArduinoStatus(false, 'Please enter Arduino IP address');
         return;
       }
 
       updateArduinoStatus(false, 'Connecting to Arduino...');
 
-      // Save IP to localStorage
-      localStorage.setItem('arduinoIP', arduinoIP);
-
-      // Try to fetch data immediately
-      fetchArduinoData();
+      // Simulate connection after delay
+      setTimeout(() => {
+        fetchArduinoData();
+      }, 1000);
     }
 
     // Mode Control
     function setMode(mode) {
-      currentMode = mode;
+      appState.currentMode = mode;
       updateModeButtons();
 
-      // Update mode on server
+      // Update mode on system
       togglePump(document.getElementById('irrigationToggle').checked ? 'on' : 'off');
     }
 
@@ -777,22 +764,15 @@
     document.addEventListener('DOMContentLoaded', function () {
       const toggle = document.getElementById('irrigationToggle');
 
-      // Load saved Arduino IP
-      const savedIP = localStorage.getItem('arduinoIP');
-      if (savedIP) {
-        //document.getElementById('arduinoIP').value = savedIP;
-        arduinoIP = savedIP;
-      }
-
       // Setup irrigation toggle
       toggle.addEventListener('change', function () {
-        if (arduinoConnected) {
+        if (appState.arduinoConnected) {
           // If Arduino is connected, use Arduino pump
           if (this.checked) {
             activateArduinoPump();
           }
         } else {
-          // Otherwise use server pump
+          // Otherwise use demo pump
           const action = this.checked ? 'on' : 'off';
           togglePump(action);
         }
@@ -800,14 +780,12 @@
 
       // Initial data fetch
       fetchSensorData();
-      if (arduinoIP) {
-        fetchArduinoData();
-      }
+      fetchArduinoData();
 
       // Fetch data every 5 seconds
       setInterval(fetchSensorData, 5000);
       setInterval(() => {
-        if (arduinoIP) {
+        if (appState.arduinoIP) {
           fetchArduinoData();
         }
       }, 3000);
