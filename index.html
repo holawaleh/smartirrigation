@@ -503,84 +503,75 @@
       </h2>
     </div>
 
-    <!-- Arduino Connection Panel -->
-    <div class="arduino-connection">
-      <h3>🔌 Arduino Connection</h3>
-      <div class="connection-input">
-        <input type="text" id="arduinoIP" placeholder="Enter Arduino IP (e.g., 192.168.1.100)" value="">
-        <button onclick="connectToArduino()">Connect</button>
+
+  </div>
+
+  <!-- Reading Panels -->
+  <div class="reading-container">
+    <div class="reading-panel">
+      <h3>Live Weather Forecast</h3>
+      <div class="reading-item">
+        <span>Temperature</span>
+        <span class="reading-value" id="pred-temp">28°C</span>
       </div>
-      <div class="arduino-status" id="arduinoStatus">
-        Enter your Arduino's IP address to connect
+      <div class="reading-item">
+        <span>Pressure</span>
+        <span class="reading-value" id="pred-pressure">1013 hPa</span>
+      </div>
+      <div class="reading-item">
+        <span>Soil Moisture</span>
+        <span class="reading-value" id="pred-moisture">45%</span>
+      </div>
+      <div class="reading-item">
+        <span>Humidity</span>
+        <span class="reading-value" id="pred-humidity">65%</span>
       </div>
     </div>
 
-    <!-- Reading Panels -->
-    <div class="reading-container">
-      <div class="reading-panel">
-        <h3>Live Weather Forecast</h3>
-        <div class="reading-item">
-          <span>Temperature</span>
-          <span class="reading-value" id="pred-temp">28°C</span>
-        </div>
-        <div class="reading-item">
-          <span>Pressure</span>
-          <span class="reading-value" id="pred-pressure">1013 hPa</span>
-        </div>
-        <div class="reading-item">
-          <span>Soil Moisture</span>
-          <span class="reading-value" id="pred-moisture">45%</span>
-        </div>
-        <div class="reading-item">
-          <span>Humidity</span>
-          <span class="reading-value" id="pred-humidity">65%</span>
-        </div>
+    <div class="reading-panel">
+      <h3>Arduino Sensor Readings</h3>
+      <div class="reading-item">
+        <span>Temperature</span>
+        <span class="reading-value" id="sensor-temp">--°C</span>
       </div>
-
-      <div class="reading-panel">
-        <h3>Arduino Sensor Readings</h3>
-        <div class="reading-item">
-          <span>Temperature</span>
-          <span class="reading-value" id="sensor-temp">--°C</span>
-        </div>
-        <div class="reading-item">
-          <span>Humidity</span>
-          <span class="reading-value" id="sensor-humidity">--%</span>
-        </div>
-        <div class="reading-item">
-          <span>Soil Moisture</span>
-          <span class="reading-value" id="sensor-moisture">--</span>
-        </div>
-        <div class="reading-item">
-          <span>Threshold</span>
-          <span class="reading-value" id="sensor-threshold">--</span>
-        </div>
+      <div class="reading-item">
+        <span>Humidity</span>
+        <span class="reading-value" id="sensor-humidity">--%</span>
+      </div>
+      <div class="reading-item">
+        <span>Soil Moisture</span>
+        <span class="reading-value" id="sensor-moisture">--</span>
+      </div>
+      <div class="reading-item">
+        <span>Threshold</span>
+        <span class="reading-value" id="sensor-threshold">--</span>
       </div>
     </div>
+  </div>
 
-    <!-- Control Container -->
-    <div class="control-container">
-      <!-- Mode Toggle -->
-      <div class="mode-toggle">
-        <span>Control Mode:</span>
-        <button class="mode-btn active" id="autoModeBtn" onclick="setMode('auto')">Auto</button>
-        <button class="mode-btn" id="manualModeBtn" onclick="setMode('manual')">Manual</button>
-      </div>
-
-      <!-- Irrigation Toggle -->
-      <div class="toggle-container">
-        <span>Manual Pump Control</span>
-        <label class="switch">
-          <input type="checkbox" id="irrigationToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
+  <!-- Control Container -->
+  <div class="control-container">
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+      <span>Control Mode:</span>
+      <button class="mode-btn active" id="autoModeBtn" onclick="setMode('auto')">Auto</button>
+      <button class="mode-btn" id="manualModeBtn" onclick="setMode('manual')">Manual</button>
     </div>
 
-    <!-- Status Message -->
-    <div class="status-message" id="statusMessage">
-      Connect to Arduino to see pump status
+    <!-- Irrigation Toggle -->
+    <div class="toggle-container">
+      <span>Manual Pump Control</span>
+      <label class="switch">
+        <input type="checkbox" id="irrigationToggle">
+        <span class="slider"></span>
+      </label>
     </div>
+  </div>
+
+  <!-- Status Message -->
+  <div class="status-message" id="statusMessage">
+    Connect to Arduino to see pump status
+  </div>
 
 
   </div>
