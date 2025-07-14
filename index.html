@@ -582,17 +582,7 @@
       Connect to Arduino to see pump status
     </div>
 
-    <!-- API Information -->
-    <div class="api-info">
-      <h3>Arduino Integration Guide</h3>
-      <p><strong>Step 1:</strong> Upload the provided Arduino code to your ESP8266</p>
-      <p><strong>Step 2:</strong> Connect to the Arduino's WiFi setup (ESP_IrrigationSetup)</p>
-      <p><strong>Step 3:</strong> Configure your WiFi credentials through the Arduino's web interface</p>
-      <p><strong>Step 4:</strong> Find your Arduino's IP address and enter it above</p>
-      <p><strong>Arduino API:</strong> <code>http://[ARDUINO_IP]/api/data</code></p>
-      <p><strong>Manual Pump:</strong> <code>http://[ARDUINO_IP]/pump</code></p>
-      <p><strong>Server URL:</strong> <code>https://smartirrigation-edx5.onrender.com</code></p>
-    </div>
+
   </div>
 
   <script>
@@ -775,10 +765,10 @@
       }
 
       updateArduinoStatus(false, 'Connecting to Arduino...');
-      
+
       // Save IP to localStorage
       localStorage.setItem('arduinoIP', arduinoIP);
-      
+
       // Try to fetch data immediately
       fetchArduinoData();
     }
