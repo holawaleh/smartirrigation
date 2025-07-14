@@ -1,136 +1,132 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const sensorRoutes = require('./routes/sensorRoutes');
+const pumpRoutes = require('./routes/pumpRoutes');
+const arduinoRoutes = require('./routes/arduinoRoutes');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
+// CORS Configuration - Allow your deployed frontend
+const corsOptions = {
+  origin: [
+    'https://smartirrigation-rosy.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// In-memory storage
-let sensorData = {
-  temperature: 27.0,
-  humidity: 64,
-  pressure: 1012,
-  soilMoisture: 46,
-  timestamp: new Date().toISOString()
-};
-
-let pumpStatus = {
-  isOn: false,
-  lastToggled: new Date().toISOString(),
-  autoMode: true
-};
-
-let sensorHistory = [];
-
-// --- FRONTEND-COMPATIBLE ENDPOINTS ---
-
-// 🔌 Toggle Pump (Manual Control)
-app.post('/api/pump/toggle', (req, res) => {
-  const { action, mode } = req.body;
-
-  if (!['toggle', 'on', 'off'].includes(action)) {
-    return res.status(400).json({ success: false, error: 'Invalid action' });
-  }
-
-  let newStatus;
-  if (action === 'toggle') {
-    newStatus = !pumpStatus.isOn;
-  } else {
-    newStatus = action === 'on';
-  }
-
-  pumpStatus.isOn = newStatus;
-  pumpStatus.lastToggled = new Date().toISOString();
-  pumpStatus.autoMode = mode === 'auto';
-
-  res.json({
-    success: true,
-    pumpStatus: {
-      isOn: pumpStatus.isOn,
-      autoMode: pumpStatus.autoMode
-    }
-  });
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
 });
 
-// 📊 Get Sensor Data + Pump Status
-app.get('/api/sensors/data', (req, res) => {
-  res.json({
-    success: true,
-    sensorData: {
-      temperature: sensorData.temperature,
-      humidity: sensorData.humidity,
-      pressure: sensorData.pressure,
-      soilMoisture: sensorData.soilMoisture
-    },
-    pumpStatus: {
-      isOn: pumpStatus.isOn,
-      autoMode: pumpStatus.autoMode
-    }
-  });
-});
+// Routes
+app.use('/api', sensorRoutes);
+app.use('/api', pumpRoutes);
+app.use('/api', arduinoRoutes);
 
-// 📤 Receive Sensor Data from MCU (ESP8266 / Arduino)
-app.post('/api/sensors/data', (req, res) => {
-  const { temperature, humidity, pressure, soilMoisture } = req.body;
-
-  if (temperature === undefined || humidity === undefined || soilMoisture === undefined) {
-    return res.status(400).json({ success: false, error: 'Missing required data' });
-  }
-
-  // Update latest sensor data
-  sensorData = {
-    temperature: parseFloat(temperature),
-    humidity: parseInt(humidity),
-    pressure: pressure ? parseInt(pressure) : sensorData.pressure,
-    soilMoisture: parseInt(soilMoisture),
-    timestamp: new Date().toISOString()
-  };
-
-  // Store history (for trends)
-  sensorHistory.push({ ...sensorData });
-  if (sensorHistory.length > 100) sensorHistory.shift();
-
-  // Auto-irrigation logic
-  if (pumpStatus.autoMode) {
-    if (sensorData.soilMoisture < 35 && !pumpStatus.isOn) {
-      pumpStatus.isOn = true;
-      pumpStatus.lastToggled = new Date().toISOString();
-    } else if (sensorData.soilMoisture > 70 && pumpStatus.isOn) {
-      pumpStatus.isOn = false;
-      pumpStatus.lastToggled = new Date().toISOString();
-    }
-  }
-
-  res.json({
-    success: true,
-    message: 'Sensor data received',
-    pumpCommand: pumpStatus.isOn ? 'ON' : 'OFF',
-    autoMode: pumpStatus.autoMode
-  });
-});
-
-// ⚙️ Get Current Pump Command for MCU
-app.get('/api/mcu/pump-command', (req, res) => {
-  res.json({
-    success: true,
-    pumpCommand: pumpStatus.isOn ? 'ON' : 'OFF',
-    autoMode: pumpStatus.autoMode,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 🧪 Health Check
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     status: 'running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    server: 'Smart Irrigation System'
+  });
+});
+
+// Arduino proxy endpoint to handle CORS issues
+app.get('/api/arduino-proxy/:ip', async (req, res) => {
+  const { ip } = req.params;
+  
+  try {
+    const response = await fetch(`http://${ip}/api/data`);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Arduino proxy error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to connect to Arduino',
+      message: error.message
+    });
+  }
+});
+
+// Arduino pump control proxy
+app.post('/api/arduino-pump/:ip', async (req, res) => {
+  const { ip } = req.params;
+  
+  try {
+    const response = await fetch(`http://${ip}/pump`);
+    const result = await response.text();
+    res.json({
+      success: true,
+      message: result
+    });
+  } catch (error) {
+    console.error('Arduino pump proxy error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to activate Arduino pump',
+      message: error.message
+    });
+  }
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Smart Irrigation System API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      sensors: '/api/sensors/data',
+      pump: '/api/pump/toggle',
+      arduino: {
+        sensors: '/api/arduino/sensors (POST)',
+        pump: '/api/arduino/pump (GET)',
+        proxy: '/api/arduino-proxy/:ip (GET)',
+        pumpProxy: '/api/arduino-pump/:ip (POST)'
+      }
+    }
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: err.message
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    path: req.originalUrl
   });
 });
 
 // Start Server
 app.listen(port, () => {
-  console.log(`✅ Smart Irrigation API running on http://localhost:${port}`);
+  console.log(`✅ Smart Irrigation API running on port ${port}`);
+  console.log(`🌐 Server URL: https://smartirrigation-edx5.onrender.com`);
+  console.log(`🎯 Frontend URL: https://smartirrigation-rosy.vercel.app`);
 });

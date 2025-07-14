@@ -126,6 +126,71 @@
       white-space: normal;
     }
 
+    /* Arduino Connection Panel */
+    .arduino-connection {
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px auto;
+      max-width: 600px;
+      color: white;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .arduino-connection h3 {
+      margin-bottom: 15px;
+      font-size: 1.4em;
+      text-align: center;
+    }
+
+    .connection-input {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .connection-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    .connection-input button {
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .connection-input button:hover {
+      background: #45a049;
+    }
+
+    .arduino-status {
+      text-align: center;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .arduino-connected {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid rgba(76, 175, 80, 0.5);
+    }
+
+    .arduino-disconnected {
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid rgba(244, 67, 54, 0.5);
+    }
+
     /* Reading Panels */
     .reading-container {
       display: flex;
@@ -322,6 +387,29 @@
       border: 1px solid #f5c6cb;
     }
 
+    /* API Info Panel */
+    .api-info {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 600px;
+      font-size: 0.9em;
+    }
+
+    .api-info h3 {
+      color: #495057;
+      margin-bottom: 15px;
+    }
+
+    .api-info code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .reading-container {
@@ -364,6 +452,20 @@
       .mode-toggle {
         flex-direction: column;
       }
+
+      .api-info {
+        margin: 20px 10px;
+        padding: 15px;
+      }
+
+      .connection-input {
+        flex-direction: column;
+      }
+
+      .connection-input input,
+      .connection-input button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -395,10 +497,22 @@
   <div class="hero">
     <h1>Smart Irrigation System</h1>
     <div class="description">
-      <h2>The Smart Irrigation System uses IOT-Core microcontroller to optimize water usage, ensuring your plants get
+      <h2>The Smart Irrigation System uses ESP8266 microcontroller to optimize water usage, ensuring your plants get
         the right amount of water—no more, no less. Especially for agriculture purposes, the system adapts to real-time
         weather conditions, soil moisture levels, and environmental factors to deliver precision irrigation at its best.
       </h2>
+    </div>
+
+    <!-- Arduino Connection Panel -->
+    <div class="arduino-connection">
+      <h3>🔌 Arduino Connection</h3>
+      <div class="connection-input">
+        <input type="text" id="arduinoIP" placeholder="Enter Arduino IP (e.g., 192.168.1.100)" value="">
+        <button onclick="connectToArduino()">Connect</button>
+      </div>
+      <div class="arduino-status" id="arduinoStatus">
+        Enter your Arduino's IP address to connect
+      </div>
     </div>
 
     <!-- Reading Panels -->
@@ -424,22 +538,22 @@
       </div>
 
       <div class="reading-panel">
-        <h3>Sensor Readings</h3>
+        <h3>Arduino Sensor Readings</h3>
         <div class="reading-item">
           <span>Temperature</span>
-          <span class="reading-value" id="sensor-temp">27°C</span>
-        </div>
-        <div class="reading-item">
-          <span>Pressure</span>
-          <span class="reading-value" id="sensor-pressure">1012 hPa</span>
-        </div>
-        <div class="reading-item">
-          <span>Soil Moisture</span>
-          <span class="reading-value" id="sensor-moisture">47%</span>
+          <span class="reading-value" id="sensor-temp">--°C</span>
         </div>
         <div class="reading-item">
           <span>Humidity</span>
-          <span class="reading-value" id="sensor-humidity">63%</span>
+          <span class="reading-value" id="sensor-humidity">--%</span>
+        </div>
+        <div class="reading-item">
+          <span>Soil Moisture</span>
+          <span class="reading-value" id="sensor-moisture">--</span>
+        </div>
+        <div class="reading-item">
+          <span>Threshold</span>
+          <span class="reading-value" id="sensor-threshold">--</span>
         </div>
       </div>
     </div>
@@ -455,7 +569,7 @@
 
       <!-- Irrigation Toggle -->
       <div class="toggle-container">
-        <span>Irrigation Control</span>
+        <span>Manual Pump Control</span>
         <label class="switch">
           <input type="checkbox" id="irrigationToggle">
           <span class="slider"></span>
@@ -465,16 +579,30 @@
 
     <!-- Status Message -->
     <div class="status-message" id="statusMessage">
-      Irrigation System: OFF
+      Connect to Arduino to see pump status
+    </div>
+
+    <!-- API Information -->
+    <div class="api-info">
+      <h3>Arduino Integration Guide</h3>
+      <p><strong>Step 1:</strong> Upload the provided Arduino code to your ESP8266</p>
+      <p><strong>Step 2:</strong> Connect to the Arduino's WiFi setup (ESP_IrrigationSetup)</p>
+      <p><strong>Step 3:</strong> Configure your WiFi credentials through the Arduino's web interface</p>
+      <p><strong>Step 4:</strong> Find your Arduino's IP address and enter it above</p>
+      <p><strong>Arduino API:</strong> <code>http://[ARDUINO_IP]/api/data</code></p>
+      <p><strong>Manual Pump:</strong> <code>http://[ARDUINO_IP]/pump</code></p>
+      <p><strong>Server URL:</strong> <code>https://smartirrigation-edx5.onrender.com</code></p>
     </div>
   </div>
 
   <script>
-    // API Configuration
-    const API_BASE_URL = 'http://localhost:3000/api'; // Change this to your server URL
+    // API Configuration - Updated to use deployed server
+    const API_BASE_URL = 'https://smartirrigation-edx5.onrender.com/api';
 
     let isConnected = false;
     let currentMode = 'auto';
+    let arduinoIP = '';
+    let arduinoConnected = false;
 
     // API Functions
     async function fetchSensorData() {
@@ -490,6 +618,21 @@
       } catch (error) {
         console.error('Error fetching sensor data:', error);
         updateConnectionStatus(false);
+      }
+    }
+
+    async function fetchArduinoData() {
+      if (!arduinoIP) return;
+
+      try {
+        const response = await fetch(`http://${arduinoIP}/api/data`);
+        const data = await response.json();
+
+        updateArduinoDisplay(data);
+        updateArduinoStatus(true, 'Connected to Arduino');
+      } catch (error) {
+        console.error('Error fetching Arduino data:', error);
+        updateArduinoStatus(false, 'Failed to connect to Arduino');
       }
     }
 
@@ -518,13 +661,20 @@
       }
     }
 
+    async function activateArduinoPump() {
+      if (!arduinoIP) return;
+
+      try {
+        const response = await fetch(`http://${arduinoIP}/pump`);
+        const result = await response.text();
+        console.log('Arduino pump response:', result);
+      } catch (error) {
+        console.error('Error activating Arduino pump:', error);
+      }
+    }
+
     // Update Display Functions
     function updateSensorDisplay(sensorData) {
-      document.getElementById('sensor-temp').textContent = sensorData.temperature + '°C';
-      document.getElementById('sensor-humidity').textContent = sensorData.humidity + '%';
-      document.getElementById('sensor-pressure').textContent = sensorData.pressure + ' hPa';
-      document.getElementById('sensor-moisture').textContent = sensorData.soilMoisture + '%';
-
       // Update weather feed
       const wind = (10 + Math.random() * 5).toFixed(1);
       document.getElementById('weatherText').textContent =
@@ -537,6 +687,24 @@
       document.getElementById('pred-moisture').textContent = (sensorData.soilMoisture + Math.random() * 6 - 3).toFixed(0) + '%';
     }
 
+    function updateArduinoDisplay(arduinoData) {
+      document.getElementById('sensor-temp').textContent = arduinoData.temperature + '°C';
+      document.getElementById('sensor-humidity').textContent = arduinoData.humidity + '%';
+      document.getElementById('sensor-moisture').textContent = arduinoData.moisture;
+      document.getElementById('sensor-threshold').textContent = arduinoData.threshold;
+
+      // Update status message based on Arduino data
+      const statusMessage = document.getElementById('statusMessage');
+      if (arduinoData.pumpActive) {
+        statusMessage.textContent = 'Arduino Pump: ACTIVE';
+        statusMessage.className = 'status-message status-on';
+      } else {
+        const soilStatus = arduinoData.moisture > arduinoData.threshold ? 'DRY' : 'MOIST';
+        statusMessage.textContent = `Arduino Pump: OFF (Soil: ${soilStatus})`;
+        statusMessage.className = 'status-message status-off';
+      }
+    }
+
     function updatePumpStatus(pumpStatus) {
       const toggle = document.getElementById('irrigationToggle');
       const statusMessage = document.getElementById('statusMessage');
@@ -546,12 +714,14 @@
 
       updateModeButtons();
 
-      if (pumpStatus.isOn) {
-        statusMessage.textContent = `Irrigation System: ON (${currentMode.toUpperCase()} mode)`;
-        statusMessage.className = 'status-message status-on';
-      } else {
-        statusMessage.textContent = `Irrigation System: OFF (${currentMode.toUpperCase()} mode)`;
-        statusMessage.className = 'status-message status-off';
+      if (!arduinoConnected) {
+        if (pumpStatus.isOn) {
+          statusMessage.textContent = `Server Pump: ON (${currentMode.toUpperCase()} mode)`;
+          statusMessage.className = 'status-message status-on';
+        } else {
+          statusMessage.textContent = `Server Pump: OFF (${currentMode.toUpperCase()} mode)`;
+          statusMessage.className = 'status-message status-off';
+        }
       }
     }
 
@@ -560,11 +730,24 @@
       isConnected = connected;
 
       if (connected) {
-        statusElement.textContent = '🟢 Connected';
+        statusElement.textContent = '🟢 Server Connected';
         statusElement.className = 'connection-status connected';
       } else {
-        statusElement.textContent = '🔴 Disconnected';
+        statusElement.textContent = '🔴 Server Disconnected';
         statusElement.className = 'connection-status disconnected';
+      }
+    }
+
+    function updateArduinoStatus(connected, message) {
+      const statusElement = document.getElementById('arduinoStatus');
+      arduinoConnected = connected;
+
+      if (connected) {
+        statusElement.textContent = '🟢 ' + message;
+        statusElement.className = 'arduino-status arduino-connected';
+      } else {
+        statusElement.textContent = '🔴 ' + message;
+        statusElement.className = 'arduino-status arduino-disconnected';
       }
     }
 
@@ -581,6 +764,25 @@
       }
     }
 
+    // Arduino Connection
+    function connectToArduino() {
+      const ipInput = document.getElementById('arduinoIP');
+      arduinoIP = ipInput.value.trim();
+
+      if (!arduinoIP) {
+        updateArduinoStatus(false, 'Please enter Arduino IP address');
+        return;
+      }
+
+      updateArduinoStatus(false, 'Connecting to Arduino...');
+      
+      // Save IP to localStorage
+      localStorage.setItem('arduinoIP', arduinoIP);
+      
+      // Try to fetch data immediately
+      fetchArduinoData();
+    }
+
     // Mode Control
     function setMode(mode) {
       currentMode = mode;
@@ -594,17 +796,40 @@
     document.addEventListener('DOMContentLoaded', function () {
       const toggle = document.getElementById('irrigationToggle');
 
+      // Load saved Arduino IP
+      const savedIP = localStorage.getItem('arduinoIP');
+      if (savedIP) {
+        document.getElementById('arduinoIP').value = savedIP;
+        arduinoIP = savedIP;
+      }
+
       // Setup irrigation toggle
       toggle.addEventListener('change', function () {
-        const action = this.checked ? 'on' : 'off';
-        togglePump(action);
+        if (arduinoConnected) {
+          // If Arduino is connected, use Arduino pump
+          if (this.checked) {
+            activateArduinoPump();
+          }
+        } else {
+          // Otherwise use server pump
+          const action = this.checked ? 'on' : 'off';
+          togglePump(action);
+        }
       });
 
       // Initial data fetch
       fetchSensorData();
+      if (arduinoIP) {
+        fetchArduinoData();
+      }
 
       // Fetch data every 5 seconds
       setInterval(fetchSensorData, 5000);
+      setInterval(() => {
+        if (arduinoIP) {
+          fetchArduinoData();
+        }
+      }, 3000);
 
       // Add interactive features
       setupInteractiveFeatures();
